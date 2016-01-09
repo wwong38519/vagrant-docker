@@ -1,0 +1,30 @@
+VAGRANTFILE_API_VERSION ||= "2"
+
+ENV['VAGRANT_DEFAULT_PROVIDER'] ||= "docker"
+
+$box = "ubuntu/trusty64"
+$dockerhostfile = "../Vagrantfile.dockerhost"
+$dockerhostname = "dockerhost"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+	config.vm.box_check_update = false
+
+#	config.vm.define "base", primary: true do |base|
+#		base.vm.box = $box
+#	end
+
+	config.vm.define "app" do |app|
+		app.vm.provider "docker" do |docker|
+			docker.name = "app"
+			docker.vagrant_vagrantfile = "../Vagrantfile.dockerhost"
+			docker.vagrant_machine = $dockerhostname
+			docker.build_dir = "."
+			docker.dockerfile = "Dockerfile"
+#			docker.create_args = ["-t"]
+			docker.ports = ["9000:80"]
+			docker.volumes = ["/vagrant/sample:/opt/apps"]
+			docker.remains_running = true
+		end
+	end
+
+end

@@ -1,0 +1,39 @@
+VAGRANTFILE_API_VERSION ||= "2"
+
+ENV['VAGRANT_DEFAULT_PROVIDER'] ||= 'docker'
+
+$dockerhostfile = "../Vagrantfile.dockerhost"
+$dockerhostname= "dockerhost"
+$dockerfile = "Dockerfile"
+
+def defineApp(docker)
+	docker.vagrant_vagrantfile = $dockerhostfile
+	docker.vagrant_machine = $dockerhostname
+	docker.dockerfile = $dockerfile
+	docker.build_dir = "."
+	docker.create_args = ["-t"]
+	docker.volumes = ["/vagrant/meanjs:/opt/apps"]
+	docker.remains_running = true
+end
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+	config.vm.box_check_update = false
+
+	config.vm.define "meandb" do |app|
+		app.vm.provider :docker do |docker|
+			defineApp(docker)
+			docker.name = "meandb"
+			docker.ports = ["9003:80", "9004:27017"]
+		end
+	end
+
+	config.vm.define "meanapp" do |app|
+		app.vm.provider :docker do |docker|
+			defineApp(docker)
+			docker.name = "meanapp"
+			docker.ports = ["9001:80", "9002:27017"]
+			docker.link "meandb:meandb"
+		end
+	end
+end
+

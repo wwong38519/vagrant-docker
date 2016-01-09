@@ -1,0 +1,28 @@
+VAGRANTFILE_API_VERSION ||= "2"
+
+box = "ubuntu/trusty64"
+dockerhostname= "dockerhost"
+ipaddr = "192.168.0.10"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+	config.vm.box_check_update = false
+	config.vm.define "dockerhost" do |host|
+		host.vm.box = box
+		host.vm.provision :docker
+		host.vm.provision :shell, inline: "ps aux | grep 'sshd:' | awk '{print $2}' | xargs kill"
+		host.vm.provision :shell, inline: "chmod 755 /var/lib/docker"
+		host.vm.provider :virtualbox do |vb|
+			vb.name = dockerhostname
+		end
+		host.vm.network :private_network, ip: ipaddr
+		for i in 9000..9100
+			host.vm.network :forwarded_port, host:i, guest:i
+		end
+#		host.vm.network :forwarded_port, host:22, guest:22
+#		host.vm.synced_folder ".", "/vagrant", type: "nfs"
+#		host.vm.synced_folder ".", "/vagrant", type: "nfs", mount_options:["bg,nolock,noatime"]
+#		host.vm.synced_folder ".", "/vagrant", type: "rsync", owner: "vagrant", group: "vagrant", mount_options: ["dmode=775,fmode=664"]
+#		host.vm.synced_folder ".", "/vagrant", owner: "vagrant", group: "vagrant", mount_options: ["dmode=775,fmode=664"]
+		host.vm.synced_folder ".", "/vagrant", owner: "vagrant", group: "vagrant"
+	end
+end
